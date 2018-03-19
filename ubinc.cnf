@@ -1,0 +1,10 @@
+
+[nntp]
+
+server = news.mozilla.org
+port = 119
+
+user =
+passwd =
+
+newsrc = newsrc

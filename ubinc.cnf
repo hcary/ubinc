@@ -8,3 +8,8 @@ user =
 passwd =
 
 newsrc = newsrc
+
+long_filenames = True
+
+download_path = /data/download/temp
+

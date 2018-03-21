@@ -28,6 +28,12 @@ from optparse import OptionParser
 import ConfigParser
 import nntplib
 import socket
+import yenc
+
+
+HOMEDIR = os.getenv("HOME") + "/"
+
+
 
 parser = OptionParser("usage: %prog [options] ",
     version="%prog 1.0")
@@ -36,7 +42,7 @@ parser.add_option("-c", "--config",
     action="store",
     type="string",
     dest="config",
-    default="ubinc.cnf",
+    default=HOMEDIR + "/ubinc.cnf",
     help="configuration file name")
 
 parser.add_option("-g", "--group",
@@ -46,12 +52,19 @@ parser.add_option("-g", "--group",
     default="*",
     help="By default " + sys.argv[0] + " will process every subscribed group in the .newsrc. This option specifies the name of one group to be processed. Note that group must exist in the .newsrc and must be subscribed.")
 
-parser.add_option("-g", "--group",
+parser.add_option("-l", "--long",
+    action="store_true",
+    dest="long",
+    default=False,
+    help="Long filenames - uses the article subject as the filename. This makes life easier because many folks encode their files with terribly vague filenames.")
+
+parser.add_option("-s", "--search",
     action="store",
     type="string",
-    dest="group",
+    dest="search",
     default="*",
-    help="Long filenames - uses the article subject as the filename. This makes life easier because many folks encode their files with terribly vague filenames.")
+    help="")
+ 
 
 (opts, args) = parser.parse_args()
 
@@ -59,6 +72,13 @@ parser.add_option("-g", "--group",
 config = ConfigParser.ConfigParser()
 config.read(opts.config)
 
+# Ensure download path is terminated with a / to allow appending filename withour breaking path
+download_path = config.get('nntp', 'download_path')
+if download_path[-1] != "/":
+    download_path = download_path + "/"
+
+
+x = yenc
 
 
 def str_rem_spaces(mystr):
@@ -84,21 +104,39 @@ conn = nntplib.NNTP(config.get('nntp', 'server'), \
 #group, last, first, flag
 #conn.list("newsrc.txt")
 
-resp, count, first, last, name = conn.group('mozilla.dev.web-development')
+resp, count, first, last, name = conn.group(opts.group)
 print count, first, last, name
 
 
 resp, subs = conn.xhdr('subject', first + '-' + last)
 for id, subject in subs:
-    print id, subject
+    #print id, subject
 
-    if subject.find("Demo") > 0:
+    print id
+    
+    if subject.find(opts.search) > 0:
         
         subject = str_rem_spaces(subject)
         
         print "SUBJECT: " + subject
-        #print myStr
-        conn.body(id, "download/" + subject + ".txt")
+        #conn.body(id, download_path + subject + ".txt")
+        body_result = conn.body(id)
+        print body_result
+        
+        for ln in body_result:
+            print ln
+    
+    else:
+
+        subject = str_rem_spaces(subject)
+        
+        print "SUBJECT: " + subject
+        #conn.body(id, download_path + subject + ".txt")
+        body_result = conn.body(id)
+        print body_result
+        
+        for ln in body_result:
+            print ln       
 #response, number, id, list = conn.head()
 
 
